@@ -1,0 +1,26 @@
+# Core ML stack
+torch>=2.1.0
+transformers>=4.37.0
+datasets>=2.16.0
+trl==0.15.2 # trl==0.11.2 for PPOTrainer
+peft>=0.9.0
+accelerate>=0.28.0
+deepspeed>=0.12.0
+bitsandbytes>=0.43.0
+
+# Data and utilities
+pandas>=2.1.0
+numpy>=1.24.0
+matplotlib>=3.8.0
+python-dateutil>=2.8.2
+scikit-learn>=1.4.0
+lime>=0.2.0
+tqdm>=4.66.0
+
+# Logging and monitoring
+wandb>=0.16.0
+tensorboard>=2.16.0
+
+# APIs and networking
+openai>=1.12.0
+httpx>=0.27.0
