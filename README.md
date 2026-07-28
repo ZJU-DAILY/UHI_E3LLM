@@ -2,22 +2,25 @@
 UHI_E3LLM is an end-to-end LLM-based model for forecasting monthly Urban Heat Island (UHI) intensity and producing factor-level explanations. The codebase includes supervised fine-tuning (SFT), PPO-based alignment, LoRA merge utilities, and explanation generation.
 
 ## Project structure
-```
+
+```text
 UHI_E3LLM/
-├─ Dataset/                             # Train/valid 
-├─ model/                               # Base or merged models (downloaded from Hugging Face)
-├─ model_adapters/                      # LoRA adapters (e.g., SFT, PPO, merged)
+├─ Dataset/                             # Training and validation datasets
+├─ model/                               # Base or merged models downloaded from Hugging Face
+├─ model_adapters/                      # LoRA adapters, such as SFT, PPO, and merged adapters
+├─ scripts/
+│  └─ preprocess_new.ipynb              # Preprocessing notebook
 ├─ src/
 │  ├─ SFT_trainer.py                    # Supervised fine-tuning with LoRA
 │  ├─ Inference.py                      # Batched inference and metric export
 │  ├─ PPOTrainer.py                     # PPO alignment loop
-│  ├─ merge_lora.py                     # Merge a single LoRA adapter back into base model
+│  ├─ merge_lora.py                     # Merge a single LoRA adapter into the base model
 │  ├─ merge_multiple_adapters.py        # Weighted merge of multiple LoRA adapters
 │  ├─ Lime_explanation.py               # LIME-based feature attribution
 │  ├─ generate_explanation_response.py  # Generate explanation samples
 │  ├─ pretrain_sample.py                # Lightweight pretraining on explanation data
-│  ├─ model_chat.py                     # Simple chat/generation 
-│  ├─ sample.py                         # Collect explanation data via DeepSeek API
+│  ├─ model_chat.py                     # Simple chat and text generation
+│  ├─ sample.py                         # Collect explanation data through the DeepSeek API
 │  └─ util.py                           # Helper functions
 ├─ README.md
 └─ requirements.txt
