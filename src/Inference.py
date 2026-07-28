@@ -15,6 +15,9 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from utils import create_prompt, sort_dataset_by_year_month
 
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+
+
 def inference(args, model, tokenizer, test_datasets):
     model.eval()
     # true_uhi = []
@@ -150,7 +153,13 @@ def inference(args, model, tokenizer, test_datasets):
         data,
         columns=['city_idx', 'mae', 'mse', 'rmse']
     )
-    df.to_csv(os.path.join(adapter_dir, f"{args.adapter_path}_{args.checkpoint}_inference.csv"))
+    df.to_csv(
+        os.path.join(
+            adapter_dir,
+            f"{args.adapter_path}_{args.checkpoint}_inference.csv",
+        ),
+        index=False,
+    )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
@@ -160,25 +169,49 @@ if __name__ == "__main__":
     parser.add_argument('--model', type=str, default='deepseek-8b')
     parser.add_argument('--adapter_path', type=str, default='SFT')
     parser.add_argument('--checkpoint', type=str, default='.')
-    parser.add_argument('--save_path', type=str, default='./inference_results')
+    parser.add_argument(
+        '--save_path',
+        type=str,
+        default=os.path.join(PROJECT_ROOT, "inference_results"),
+    )
     parser.add_argument('--mode', type=str, default='test')
     parser.add_argument('--gradient_checkpointing', type=bool, default=False)
-    parser.add_argument('--dataset_path', type=str, default="/home/zzh/fr/nature/Final_dataset_processed")
+    parser.add_argument(
+        '--dataset_path',
+        type=str,
+        default=os.path.join(PROJECT_ROOT, "Dataset"),
+    )
 
     args = parser.parse_args()
-    
+    model_dir = os.path.join(PROJECT_ROOT, "model", args.model)
 
-    model = AutoModelForCausalLM.from_pretrained(f'model/{args.model}', dtype=torch.float16, trust_remote_code=True).to(args.device)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_dir,
+        dtype=torch.float16,
+        trust_remote_code=True,
+    ).to(args.device)
     if args.adapter_path != "":
         print(f"Adapter: model_adapters/{args.adapter_path}")
         print(f"Checkpoint: {args.model}/{args.checkpoint}")
-        model = PeftModel.from_pretrained(model, f'model_adapters/{args.adapter_path}/{args.model}/{args.checkpoint}')
+        adapter_dir = os.path.join(
+            PROJECT_ROOT,
+            "model_adapters",
+            args.adapter_path,
+            args.model,
+            args.checkpoint,
+        )
+        model = PeftModel.from_pretrained(model, adapter_dir)
     
     if args.model == 'qwen-7b' or args.model == 'qwen-7b_merged':
         print("Qwen model")
-        tokenizer = AutoTokenizer.from_pretrained(f'model/{args.model}', trust_remote_code=True, pad_token='<|endoftext|>', padding_side='left')
+        tokenizer = AutoTokenizer.from_pretrained(
+            model_dir,
+            trust_remote_code=True,
+            pad_token='<|endoftext|>',
+            padding_side='left',
+        )
     else:
-        tokenizer = AutoTokenizer.from_pretrained(f'model/{args.model}', padding_side='left')
+        tokenizer = AutoTokenizer.from_pretrained(model_dir, padding_side='left')
         tokenizer.pad_token = tokenizer.eos_token
 
     if args.gradient_checkpointing == True:

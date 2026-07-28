@@ -7,6 +7,7 @@ import re
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import torch
 from dateutil.relativedelta import relativedelta
 from datasets import load_from_disk
@@ -16,6 +17,8 @@ from torch.utils.data import DataLoader
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from utils import PROMPT, sort_dataset_by_year_month, format_prompt_Lime
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 
 
 def _get_feature_names():
@@ -200,7 +203,7 @@ def explain_tabular(args, model, tokenizer, city_idx):
     
     print("Predictor done.")
 
-    image_dir = f"./Lime_explanation/City{city_idx}"
+    image_dir = os.path.join(args.save_path, f"City{city_idx}")
     os.makedirs(image_dir, exist_ok=True)
 
     for sample_idx in range(len(dataset)):
@@ -235,19 +238,50 @@ if __name__ == "__main__":
     parser.add_argument('--device', type=str, default='cuda')
     parser.add_argument('--batch_size', type=int, default=1)
     parser.add_argument('--max_length', type=int, default=1300)
-    parser.add_argument('--model', type=str, default='deepseek-8b')
+    parser.add_argument('--model', type=str, default='deepseek-8b_merged')
     parser.add_argument('--adapter_path', type=str, default="PPO")
-    parser.add_argument('--checkpoint', type=str, default='deepseek-8b_merged/epoch0')
+    parser.add_argument('--checkpoint', type=str, default='epoch0')
     parser.add_argument('--num_samples', type=int, default=1000)
-    parser.add_argument('--dataset_path', type=str, default="/home/zzh/fr/nature/Final_dataset_processed")
+    parser.add_argument(
+        '--dataset_path',
+        type=str,
+        default=os.path.join(PROJECT_ROOT, "Dataset"),
+    )
+    parser.add_argument('--city_ids', type=int, nargs='+')
+    parser.add_argument(
+        '--save_path',
+        type=str,
+        default=os.path.join(PROJECT_ROOT, "Lime_explanation"),
+    )
 
     args = parser.parse_args()
+    model_dir = os.path.join(PROJECT_ROOT, "model", args.model)
 
-    model = AutoModelForCausalLM.from_pretrained(f'model/{args.model}', torch_dtype=torch.float16).to(args.device)
+    model = AutoModelForCausalLM.from_pretrained(
+        model_dir,
+        torch_dtype=torch.float16,
+    ).to(args.device)
     if args.adapter_path != "":
-        model = PeftModel.from_pretrained(model, f'model_adapters/{args.adapter_path}/{args.checkpoint}').to(args.device)
-    
-    tokenizer = AutoTokenizer.from_pretrained(f'model/{args.model}')
+        adapter_dir = os.path.join(
+            PROJECT_ROOT,
+            "model_adapters",
+            args.adapter_path,
+            args.model,
+            args.checkpoint,
+        )
+        model = PeftModel.from_pretrained(model, adapter_dir).to(args.device)
 
-    for city_idx in [413, 661, 677, 864]:
+    tokenizer = AutoTokenizer.from_pretrained(model_dir)
+
+    if args.city_ids is None:
+        city_metrics_path = os.path.join(
+            args.dataset_path,
+            "city_metrics",
+            "city_metrics_test.csv",
+        )
+        city_id_list = pd.read_csv(city_metrics_path)['id'].tolist()
+    else:
+        city_id_list = args.city_ids
+
+    for city_idx in city_id_list:
         explain_tabular(args, model, tokenizer, city_idx)

@@ -13,6 +13,8 @@ from torch.utils.data import DataLoader
 
 from utils import create_prompt
 
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('--device', type=str, default='cuda:0')
@@ -22,7 +24,11 @@ if __name__ == "__main__":
     parser.add_argument('--max_length', type=int, default=1300)
     parser.add_argument('--model', type=str, default='deepseek-8b')
     parser.add_argument('--target_modules', nargs='*', default=["q_proj", "v_proj"])
-    parser.add_argument('--dataset_path', type=str, default="./Datasets")
+    parser.add_argument(
+        '--dataset_path',
+        type=str,
+        default=os.path.join(PROJECT_ROOT, "Dataset"),
+    )
     parser.add_argument('--city_ids', type=int, nargs='+')
     args = parser.parse_args()
 

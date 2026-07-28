@@ -19,6 +19,7 @@ from utils import PROMPT, format_prompt_PPO
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger()
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 # logger.info("Test logger")
 
 if __name__ == "__main__":
@@ -32,7 +33,11 @@ if __name__ == "__main__":
     parser.add_argument('--target_modules', nargs='*', default=["q_proj", "v_proj"])
     parser.add_argument('--quant', type=bool, default=False)
     parser.add_argument('--gradient_checkpointing', type=bool, default=False)
-    parser.add_argument('--dataset_path', type=str, default="Dataset")
+    parser.add_argument(
+        '--dataset_path',
+        type=str,
+        default=os.path.join(PROJECT_ROOT, "Dataset"),
+    )
     args = parser.parse_args()
 
     pd_train = pd.read_csv(f'{args.dataset_path}/city_metrics/city_metrics_train.csv')
@@ -60,8 +65,7 @@ if __name__ == "__main__":
         target_modules = args.target_modules,
     )
 
-    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
-    model_dir = os.path.join(project_root, "model", args.model)
+    model_dir = os.path.join(PROJECT_ROOT, "model", args.model)
 
     if args.quant == True:
         print("Quant model")
@@ -122,7 +126,9 @@ if __name__ == "__main__":
         learning_rate=3e-6,
         gradient_checkpointing = args.gradient_checkpointing,
         log_with="tensorboard",
-        project_kwargs={'logging_dir': f"./results_PPO/{args.model}"},
+        project_kwargs={
+            'logging_dir': os.path.join(PROJECT_ROOT, "results_PPO", args.model)
+        },
     )
     def collate_fn(batch):
         input_ids = [torch.tensor(item["input_ids"]) for item in batch]
@@ -189,7 +195,14 @@ if __name__ == "__main__":
             ppo_trainer.log_stats(stats, batch, rewards)
             index += 1
 
-        ppo_trainer.save_pretrained(f"./model_adapters/PPO/{args.model}/epoch{epoch}")
+        checkpoint_dir = os.path.join(
+            PROJECT_ROOT,
+            "model_adapters",
+            "PPO",
+            args.model,
+            f"epoch{epoch}",
+        )
+        ppo_trainer.save_pretrained(checkpoint_dir)
 
     
     

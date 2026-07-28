@@ -16,6 +16,7 @@ from tqdm import tqdm
 from utils import PROMPT, format_prompt
 
 os.environ["WANDB_DISABLED"] = "true"
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 
 # torch.manual_seed(42)
 # np.random.seed(42)
@@ -39,11 +40,16 @@ if __name__ == "__main__":
     parser.add_argument('--checkpoint', type=str, default="")
     parser.add_argument('--gradient_checkpointing', type=bool, default=True)
     parser.add_argument('--resume_from_checkpoint', type=bool, default=False)
-    parser.add_argument('--dataset_path', type=str, default="./Dataset")
+    parser.add_argument(
+        '--dataset_path',
+        type=str,
+        default=os.path.join(PROJECT_ROOT, "Dataset"),
+    )
     parser.add_argument('--gradient_accumulation', type=int, default=1)
     parser.add_argument('--num_workers', type=int, default=4)
     parser.add_argument('--ddp_find_unused_parameters', action='store_true', default=False)
     args = parser.parse_args()
+    model_dir = os.path.join(PROJECT_ROOT, "model", args.model)
 
     df_train = pd.read_csv(f'{args.dataset_path}/city_metrics/city_metrics_train.csv')
     city_id_list = df_train['id'].tolist()
@@ -83,7 +89,7 @@ if __name__ == "__main__":
     if args.quant == True:
         print("Quant model")
         model = AutoModelForCausalLM.from_pretrained(
-            f'../nature/model/{args.model}',
+            model_dir,
             quantization_config=bnb_config,
             trust_remote_code=True,
             attn_implementation="flash_attention_2",
@@ -93,15 +99,14 @@ if __name__ == "__main__":
     else:
         print("No quant")
         model = AutoModelForCausalLM.from_pretrained(
-            f'../nature/model/{args.model}',
+            model_dir,
             trust_remote_code=True,
             torch_dtype="bfloat16"
         )
 
         print(model)
 
-    # tokenizer = AutoTokenizer.from_pretrained(f'model/{args.model}', trust_remote_code=True, pad_token='<|endoftext|>')
-    tokenizer = AutoTokenizer.from_pretrained(f'../nature/model/{args.model}', trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_dir, trust_remote_code=True)
     # tokenizer.pad_token = tokenizer.eos_token
     # tokenizer.pad_token_id = tokenizer.eos_token_id
     # print(tokenizer.pad_token)
@@ -116,7 +121,14 @@ if __name__ == "__main__":
     if args.adapter_path != "":
         print(f"Adapter path: {args.adapter_path}")
         print(f"Checkpoint: {args.checkpoint}")
-        model = PeftModel.from_pretrained(model, f'logs/{args.adapter_path}/{args.checkpoint}', is_trainable=True)
+        adapter_dir = os.path.join(
+            PROJECT_ROOT,
+            "model_adapters",
+            args.adapter_path,
+            args.model,
+            args.checkpoint,
+        )
+        model = PeftModel.from_pretrained(model, adapter_dir, is_trainable=True)
 
     
     model.tokenizer = tokenizer
@@ -127,7 +139,7 @@ if __name__ == "__main__":
         learning_rate = args.learning_rate,
         max_seq_length = args.max_length,
         # keep in sync with inference/merge scripts that expect model_adapters/*
-        output_dir = f'model_adapters/SFT/{args.model}',
+        output_dir = os.path.join(PROJECT_ROOT, "model_adapters", "SFT", args.model),
         bf16 = True,
         bf16_full_eval = True,
         save_steps = 500,
