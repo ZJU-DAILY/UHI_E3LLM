@@ -9,7 +9,7 @@ UHI_E3LLM/
 ├─ model/                               # Base or merged models downloaded from Hugging Face
 ├─ model_adapters/                      # LoRA adapters, such as SFT, PPO, and merged adapters
 ├─ scripts/
-│  └─ preprocess_new.ipynb              # Preprocessing notebook
+│  └─ Preprocess_new.ipynb              # Preprocessing notebook
 ├─ src/
 │  ├─ SFT_trainer.py                    # Supervised fine-tuning with LoRA
 │  ├─ Inference.py                      # Batched inference and metric export
