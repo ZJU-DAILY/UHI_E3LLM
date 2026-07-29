@@ -52,6 +52,7 @@ The experiments were conducted using the environment listed below.
 | GPU | NVIDIA A100-SXM4-80GB |
 | NVIDIA driver | 575.57.08 |
 | CUDA version | CUDA 11.8 |
+| Python | 3.9 |
 
 ## Recommended environment for the demo
 
