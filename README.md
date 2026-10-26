@@ -78,7 +78,7 @@ The complete processed dataset is published under CC BY 4.0:
 Download `Dataset.zip` from Zenodo and extract the archive. Place the extracted
 `train/`, `valid/`, `city_metrics/`, `regional_folds/`, and
 `explanation_samples/` directories directly under this repository's `data/`
-directory. The required layout is documented in [`data/README.md`](data/README.md).
+directory.
 
 ## Base model
 
@@ -142,6 +142,9 @@ bash scripts/run_explanation_distillation.sh
 bash scripts/run_main_evaluation.sh
 bash scripts/run_efficiency_measurement.sh
 ```
+
+Training `Total` is the sum of SFT, PPO, and student explanation distillation
+for both policy epochs.
 
 ## Expected output
 
@@ -262,6 +265,28 @@ bash scripts/run_ppo_penalty_sensitivity.sh
 EFFICIENCY_RUN_MAIN_EVALUATION=0 bash scripts/run_efficiency_measurement.sh
 bash scripts/run_figures.sh
 ```
+
+## Evaluation workflows
+
+The following table maps the executable workflows to the experiments, tables, and figures reported in the manuscript.
+
+| Workflow | Experiment or analysis | Corresponding manuscript item |
+|---|---|---|
+| `scripts/run_main_evaluation.sh` | UHI-E3LLM and seven-baseline comparison on the unseen test cities | Table 1; Fig. 3(a) |
+| `scripts/run_leave_one_region_out.sh` | Six-region holdout evaluation | Table 2 |
+| `scripts/run_module_ablations.sh` | Module-level ablations | Table 3 |
+| `scripts/run_component_ablations.sh` | Component-level ablations | Table 3 |
+| `scripts/run_case_study_outputs.sh` | Five-city predictions and LIME analysis | Fig. 5(a,c) |
+| `scripts/run_city_bootstrap.sh` | City-level bootstrap confidence intervals | Fig. 7(a) |
+| `scripts/run_independent_calibration.sh` | Calibration-derived error radii and test-set coverage | Fig. 7(b) |
+| `scripts/run_efficiency_measurement.sh` | Training-time and inference-time measurements | Fig. 7(c,d) |
+| `scripts/run_ppo_penalty_sensitivity.sh` | PPO invalid-output penalty sensitivity | Fig. 7(e) |
+| `scripts/run_lora_similarity_threshold.sh` | Adapter cosine similarities and threshold screening | LoRA adapter-fusion analysis |
+| `scripts/run_tables.sh` | Assemble the main, regional, and ablation results | Tables 1–3 |
+| `scripts/run_figures.sh` | Generate the statistical figure panels | Figs. 2(a–c,g,h), 3(a,b), 4(b,c), 5(a,c), and 7(a–e) |
+| Manual preparation using HTML | Presentation panels | Figs. 3(c–e), 5(b,d), and 6(b–d) |
+| Manual preparation using QGIS | Geographical maps | Figs. 2(d–f) and 4(a) |
+| No plotting entry in the released repository | Framework illustration and representative ablation output | Figs. 1 and 6(a) |
 
 ## API key handling
 

@@ -81,6 +81,11 @@ MERGED_MODEL_DIR="${MERGED_MODEL_DIR:-${ROOT}/model/${MERGED_MODEL}}"
 
 EXPLANATION_ADAPTER="${EXPLANATION_ADAPTER:-explanation_distill_global500_ppo_epoch${EXPLANATION_POLICY_EPOCH}}"
 EXPLANATION_ADAPTER_DIR="${EXPLANATION_ADAPTER_DIR:-${EXPLANATION_DISTILLED_ADAPTER_ROOT}/epoch${EXPLANATION_POLICY_EPOCH}}"
+if [[ "${EXPLANATION_ADAPTER_DIR}" == "${EXPLANATION_DISTILLED_ADAPTER_ROOT}/epoch${EXPLANATION_POLICY_EPOCH}" ]]; then
+  distillation_efficiency_record="${EFFICIENCY_RECORD_DIR}/training_uhi_distillation_epoch${EXPLANATION_POLICY_EPOCH}.json"
+else
+  distillation_efficiency_record="${EXPLANATION_ADAPTER_DIR}/training_measurement.json"
+fi
 EXPLANATION_LOG_PREFIX="${EXPLANATION_LOG_PREFIX:-${EXPLANATION_ADAPTER}}"
 explanation_log_prefix="${EXPLANATION_LOG_PREFIX:+${EXPLANATION_LOG_PREFIX}_}"
 DISTILL_DEVICE="${DISTILL_DEVICE:-cuda:0}"
@@ -265,7 +270,9 @@ else
     --explanation_loss_weight "${DISTILL_EXPLANATION_LOSS_WEIGHT}"
     --torch_dtype "${DISTILL_TORCH_DTYPE}"
     --seed "${DISTILL_SEED}"
-    --expected_samples "${EXPLANATION_SAMPLE_COUNT}")
+    --expected_samples "${EXPLANATION_SAMPLE_COUNT}"
+    --efficiency_record "${distillation_efficiency_record}"
+    --efficiency_member_epoch "${EXPLANATION_POLICY_EPOCH}")
   if [[ "${use_flat_release_samples}" == "0" ]]; then
     distillation_command+=(--selection_manifest "${EXPLANATION_SELECTION_MANIFEST}")
   fi

@@ -199,15 +199,11 @@ def main() -> None:
     summary = {
         "quantile": args.quantile,
         "q_value": q_value,
-        "interval_width": 2.0 * q_value,
         "calibration_cities": len(calibration_ids),
         "calibration_samples": len(calibration),
         "test_cities": len(test_ids),
         "test_samples": len(test),
         "test_coverage": float(test["covered"].mean()),
-        "mean_city_coverage": float(city_coverage["coverage"].mean()),
-        "min_city_coverage": float(city_coverage["coverage"].min()),
-        "max_city_coverage": float(city_coverage["coverage"].max()),
     }
     (args.output_dir / "prediction_interval_summary.json").write_text(
         json.dumps(summary, indent=2) + "\n"

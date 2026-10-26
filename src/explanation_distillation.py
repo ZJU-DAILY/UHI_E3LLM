@@ -5,6 +5,7 @@ import json
 import os
 import random
 import re
+import time
 from pathlib import Path
 from statistics import mean
 
@@ -16,6 +17,7 @@ import torch.nn.functional as F
 from peft import LoraConfig, get_peft_model
 from torch.utils.data import DataLoader, Dataset
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from efficiency import synchronize_cuda, write_measurement
 
 
 RESULT_VALUE_RE = re.compile(
@@ -392,6 +394,8 @@ def parse_args():
         help="Defaults to selection_manifest.json next to the content directory.",
     )
     parser.add_argument("--allow_truncation", action="store_true")
+    parser.add_argument("--efficiency_record", type=str, default="")
+    parser.add_argument("--efficiency_member_epoch", type=int, default=None)
     return parser.parse_args()
 
 
@@ -414,6 +418,8 @@ def main():
         raise ValueError("--save_at_steps values must be unique.")
     if args.result_loss_weight <= 0 or args.explanation_loss_weight <= 0:
         raise ValueError("Both loss weights must be positive.")
+    if args.efficiency_member_epoch is not None and args.efficiency_member_epoch < 0:
+        raise ValueError("--efficiency_member_epoch must be non-negative.")
     output_dir = Path(args.output_dir)
     if output_dir.exists() and any(output_dir.iterdir()):
         raise FileExistsError(
@@ -468,6 +474,7 @@ def main():
     )
 
     global_step = 0
+    training_seconds = 0.0
     save_at_steps = set(args.save_at_steps)
     stop_training = False
     for epoch in range(args.num_epochs):
@@ -478,11 +485,17 @@ def main():
             attention_mask = batch["attention_mask"].to(args.device, non_blocking=True)
             labels = batch["labels"].to(args.device, non_blocking=True)
             loss_weights = batch["loss_weights"].to(args.device, non_blocking=True)
+            if args.efficiency_record:
+                synchronize_cuda()
+                step_started = time.perf_counter()
             optimizer.zero_grad(set_to_none=True)
             outputs = model(input_ids=input_ids, attention_mask=attention_mask)
             loss = weighted_causal_lm_loss(outputs.logits, labels, loss_weights)
             loss.backward()
             optimizer.step()
+            if args.efficiency_record:
+                synchronize_cuda()
+                training_seconds += time.perf_counter() - step_started
             if global_step % args.log_interval == 0:
                 print(f"Step {global_step} | Loss: {loss.item():.6f}")
             global_step += 1
@@ -513,10 +526,36 @@ def main():
     run_config["output_dir"] = str(output_dir.resolve())
     run_config["training_samples"] = len(dataset)
     run_config["global_steps"] = global_step
+    if args.efficiency_record:
+        run_config["training_seconds"] = training_seconds
     (output_dir / "distillation_config.json").write_text(
         json.dumps(run_config, indent=2) + "\n",
         encoding="utf-8",
     )
+    if args.efficiency_record:
+        write_measurement(
+            args.efficiency_record,
+            kind="training",
+            method="UHI-E3LLM",
+            stage=(
+                "Distillation"
+                if args.efficiency_member_epoch is None
+                else f"Distillation_epoch{args.efficiency_member_epoch}"
+            ),
+            value=training_seconds,
+            unit="seconds",
+            note="student forward/backward/optimizer execution only; excludes teacher generation, model/data loading, tokenization, and checkpoint writes",
+            metadata={
+                "policy_epoch": args.efficiency_member_epoch,
+                "epochs": args.num_epochs,
+                "global_steps": global_step,
+                "training_samples": len(dataset),
+                "batch_size": args.batch_size,
+                "model_path": run_config["model_path"],
+                "adapter_dir": run_config["output_dir"],
+                "timing_protocol": "summed_training_steps",
+            },
+        )
     print(f"Saved explanation adapter to {output_dir}")
 
 

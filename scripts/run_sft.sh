@@ -4,6 +4,11 @@ cd "${ROOT}"
 
 MODEL="${MODEL:-deepseek-8b}"
 SFT_OUTPUT="${SFT_OUTPUT:-${ROOT}/model_adapters/SFT/${MODEL}}"
+if [[ "${SFT_OUTPUT}" == "${ROOT}/model_adapters/SFT/${MODEL}" ]]; then
+  sft_efficiency_record="${EFFICIENCY_RECORD_DIR}/training_uhi_sft.json"
+else
+  sft_efficiency_record="${SFT_OUTPUT}/training_measurement.json"
+fi
 SFT_EPOCHS="${SFT_EPOCHS:-5}"
 SFT_BATCH_SIZE="${SFT_BATCH_SIZE:-16}"
 SFT_MAX_LENGTH="${SFT_MAX_LENGTH:-1300}"
@@ -94,7 +99,7 @@ command=(env CUDA_VISIBLE_DEVICES="${GPU_ID}" "${PYTHON}" src/SFT_trainer.py
   --expected_samples_per_city "${SFT_EXPECTED_SAMPLES_PER_CITY}" \
   --target_modules q_proj v_proj \
   --input_format "${SFT_INPUT_FORMAT}" \
-  --efficiency_record "${EFFICIENCY_RECORD_DIR}/training_uhi_sft.json")
+  --efficiency_record "${sft_efficiency_record}")
 
 if [[ -n "${SFT_DATA_SEED}" ]]; then
   command+=(--data_seed "${SFT_DATA_SEED}")

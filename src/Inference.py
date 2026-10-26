@@ -103,7 +103,11 @@ def benchmark_inference(args, model, tokenizer, test_datasets, prompt_builder):
         args.efficiency_record,
         kind="inference",
         method="UHI-E3LLM",
-        stage="inference",
+        stage=(
+            "inference"
+            if args.efficiency_member_epoch is None
+            else f"inference_epoch{args.efficiency_member_epoch}"
+        ),
         value=latency,
         unit="ms_per_sample",
         note="model execution only; excludes loading, prompt construction, tokenization, parsing, and file I/O",
@@ -113,6 +117,12 @@ def benchmark_inference(args, model, tokenizer, test_datasets, prompt_builder):
             "measured_calls": args.efficiency_measured_calls,
             "timing_protocol": "independent_repetitions_mean",
             "max_new_tokens": args.max_new_tokens,
+            "max_length": args.max_length,
+            "temperature": args.temperature,
+            "input_format": args.input_format,
+            "policy_epoch": args.efficiency_member_epoch,
+            "model": args.model,
+            "checkpoint": args.checkpoint,
         },
     )
 
@@ -505,6 +515,7 @@ if __name__ == "__main__":
         help="Fail on invalid output or retain an explicit invalid record.",
     )
     parser.add_argument("--efficiency_record", type=str, default="")
+    parser.add_argument("--efficiency_member_epoch", type=int, default=None)
     parser.add_argument("--efficiency_batch_size", type=int, default=36)
     parser.add_argument("--efficiency_warmup_calls", type=int, default=5)
     parser.add_argument("--efficiency_measured_calls", type=int, default=5)
@@ -524,6 +535,8 @@ if __name__ == "__main__":
         parser.error("--num_runs must be positive")
     if args.efficiency_batch_size <= 0:
         parser.error("--efficiency_batch_size must be positive")
+    if args.efficiency_member_epoch is not None and args.efficiency_member_epoch < 0:
+        parser.error("--efficiency_member_epoch must be non-negative")
     if args.efficiency_warmup_calls < 0 or args.efficiency_measured_calls <= 0:
         parser.error("efficiency warm-up/measured calls are invalid")
     print(f"Input format: {args.input_format}")

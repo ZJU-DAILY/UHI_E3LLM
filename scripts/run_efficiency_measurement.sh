@@ -14,10 +14,11 @@ fi
 
 mkdir -p "${EFFICIENCY_RAW_DIR}" "$(dirname "${EFFICIENCY_OUTPUT}")"
 
-for record in training_uhi_sft.json training_uhi_ppo.json; do
+for record in training_uhi_sft.json training_uhi_ppo.json \
+  training_uhi_distillation_epoch0.json training_uhi_distillation_epoch1.json; do
   if [[ ! -s "${EFFICIENCY_RAW_DIR}/${record}" ]]; then
     echo "Missing main-model training measurement: ${EFFICIENCY_RAW_DIR}/${record}" >&2
-    echo "Run scripts/run_sft.sh and scripts/run_ppo.sh with the same OUTPUT_ROOT before this workflow." >&2
+    echo "Run scripts/run_sft.sh, scripts/run_ppo.sh, and scripts/run_explanation_distillation.sh with the same OUTPUT_ROOT before this workflow." >&2
     exit 1
   fi
 done

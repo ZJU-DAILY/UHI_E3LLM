@@ -1,0 +1,9 @@
+{
+  "quantile": 0.9,
+  "q_value": 2.722238881,
+  "calibration_cities": 100,
+  "calibration_samples": 3600,
+  "test_cities": 100,
+  "test_samples": 3600,
+  "test_coverage": 0.9238888888888889
+}

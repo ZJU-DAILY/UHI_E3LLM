@@ -451,7 +451,7 @@ def main():
     parser.add_argument("--eval_batch_size", type=int, default=8192)
     parser.add_argument("--progress_interval", type=int, default=100)
     parser.add_argument("--efficiency_record_dir", type=str, default="")
-    parser.add_argument("--efficiency_batch_size", type=int, default=128)
+    parser.add_argument("--efficiency_batch_size", type=int, default=36)
     parser.add_argument("--efficiency_gpu_batch_size", type=int, default=36)
     parser.add_argument("--efficiency_warmup_calls", type=int, default=5)
     parser.add_argument("--efficiency_measured_calls", type=int, default=5)

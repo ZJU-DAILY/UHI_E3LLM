@@ -4,6 +4,11 @@ cd "${ROOT}"
 
 MODEL="${MODEL:-deepseek-8b_merged__Global500}"
 PPO_OUTPUT="${PPO_OUTPUT:-${ROOT}/model_adapters/PPO/${MODEL}}"
+if [[ "${PPO_OUTPUT}" == "${ROOT}/model_adapters/PPO/${MODEL}" ]]; then
+  ppo_efficiency_record="${EFFICIENCY_RECORD_DIR}/training_uhi_ppo.json"
+else
+  ppo_efficiency_record="${PPO_OUTPUT}/training_measurement.json"
+fi
 PPO_EPOCHS="${PPO_EPOCHS:-2}"
 PPO_BATCH_SIZE="${PPO_BATCH_SIZE:-4}"
 PPO_MINI_BATCH_SIZE="${PPO_MINI_BATCH_SIZE:-4}"
@@ -258,7 +263,7 @@ command=(env CUDA_VISIBLE_DEVICES="${visible_devices}" PYTHONUNBUFFERED=1 \
   --input_format "${PPO_INPUT_FORMAT}"
   --log_with "${PPO_LOG_WITH}"
   --start_epoch "${PPO_START_EPOCH}"
-  --efficiency_record "${EFFICIENCY_RECORD_DIR}/training_uhi_ppo.json")
+  --efficiency_record "${ppo_efficiency_record}")
 
 if [[ "${PPO_SAVE_EVERY_STEPS}" != "0" ]]; then
   command+=(--save_every_steps "${PPO_SAVE_EVERY_STEPS}")

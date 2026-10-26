@@ -64,8 +64,11 @@ for epoch in "${epochs[@]}"; do
   if (( ${#city_ids[@]} > 0 )); then
     command+=(--city_ids "${city_ids[@]}")
   fi
-  if [[ -n "${DISTILLED_EFFICIENCY_RECORD}" && "${epoch}" == "${epochs[0]}" ]]; then
-    command+=(--efficiency_record "${DISTILLED_EFFICIENCY_RECORD}")
+  if [[ -n "${DISTILLED_EFFICIENCY_RECORD}" ]]; then
+    command+=(
+      --efficiency_record "${DISTILLED_EFFICIENCY_RECORD%.json}_epoch${epoch}.json"
+      --efficiency_member_epoch "${epoch}"
+      --efficiency_batch_size 36)
   fi
   run_logged "${DISTILLED_LOG_PREFIX}_epoch${epoch}" "${command[@]}"
   inference_inputs+=("${DISTILLED_OUTPUT_DIR}/epoch${epoch}")
