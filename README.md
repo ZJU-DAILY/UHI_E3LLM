@@ -293,10 +293,13 @@ The following table maps the executable workflows to the experiments, tables, an
 The released `data/explanation_samples/sample_*.txt` files are consumed
 directly by the default distillation workflow and do not require API access.
 Regenerating those samples, or constructing fold-specific explanation data,
-uses the DeepSeek API. Never store an API key in source code:
+uses an OpenAI-compatible Chat Completions API. Set the API key, endpoint,
+and teacher model through environment variables:
 
 ```bash
-export DEEPSEEK_API_KEY="your-key"
+export OPENAI_API_KEY="your-key"
+export OPENAI_BASE_URL="https://api.openai.com/v1"
+export EXPLANATION_API_MODEL="gpt-6.1-sol"
 ```
 
 API access is not required for numerical inference when the model and adapter

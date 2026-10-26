@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sample training records and generate DeepSeek explanation-distillation data."""
+"""Sample training records and generate explanations with an OpenAI-compatible API."""
 
 import argparse
 import csv
@@ -227,6 +227,16 @@ def _atomic_write(path, text):
     temporary.replace(path)
 
 
+def _generation_parameters(args):
+    if args.api_model == "gpt-6.1-sol":
+        return {"reasoning_effort": "medium"}
+    return {
+        "temperature": args.temperature,
+        "top_p": args.top_p,
+        "presence_penalty": args.presence_penalty,
+    }
+
+
 def _generate_job(job, args):
     student_prompt, completion, teacher_prompt, target = build_prompts(
         job["sample"], args.student_input_format
@@ -281,9 +291,7 @@ def _generate_job(job, args):
             ).chat.completions.create(
                 model=args.api_model,
                 messages=[{"role": "user", "content": teacher_prompt}],
-                temperature=args.temperature,
-                top_p=args.top_p,
-                presence_penalty=args.presence_penalty,
+                **_generation_parameters(args),
             )
             message = response.choices[0].message
             raw_content = message.content or ""
@@ -449,11 +457,7 @@ def _write_manifest(args, selection_payload, generated, skipped):
         "reused_this_run": skipped,
         "content_files": sum(1 for _ in (args.output_dir / "content").rglob("*.txt")),
         "reasoning_files": sum(1 for _ in (args.output_dir / "reasoning").rglob("*.txt")),
-        "generation_parameters": {
-            "temperature": args.temperature,
-            "top_p": args.top_p,
-            "presence_penalty": args.presence_penalty,
-        },
+        "generation_parameters": _generation_parameters(args),
         "guidelines_sha256": hashlib.sha256(
             EXPLANATION_GUIDELINES.encode("utf-8")
         ).hexdigest(),
@@ -486,12 +490,12 @@ def parse_args():
     parser.add_argument("--api-model", default="deepseek-reasoner")
     parser.add_argument(
         "--api-key",
-        default=os.environ.get("DEEPSEEK_API_KEY", ""),
-        help="Defaults to DEEPSEEK_API_KEY. Prefer the environment variable.",
+        default=os.environ.get("OPENAI_API_KEY", ""),
+        help="Defaults to OPENAI_API_KEY. Prefer the environment variable.",
     )
     parser.add_argument(
         "--base-url",
-        default=os.environ.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com"),
+        default=os.environ.get("OPENAI_BASE_URL", "https://api.deepseek.com"),
     )
     parser.add_argument("--concurrency", type=int, default=1)
     parser.add_argument("--temperature", type=float, default=1.1)
@@ -569,7 +573,7 @@ def main():
     skipped = len(jobs) - len(pending)
     if pending and args.reuse_content_dir is None and not args.api_key:
         raise RuntimeError(
-            "DEEPSEEK_API_KEY is required because explanation samples are missing."
+            "OPENAI_API_KEY is required because explanation samples are missing."
         )
     print(f"Explanation generation: pending={len(pending)}, reusable={skipped}")
 
